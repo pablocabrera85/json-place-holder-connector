@@ -17,10 +17,8 @@ import java.io.IOException;
 import java.util.List;
 
 import org.mule.api.annotations.ReconnectOn;
-import org.mule.api.annotations.rest.HttpMethod;
-import org.mule.api.annotations.rest.RestCall;
-import org.mule.api.annotations.rest.RestQueryParam;
-import org.mule.api.annotations.rest.RestUriParam;
+import org.mule.api.annotations.param.Payload;
+import org.mule.api.annotations.rest.*;
 import org.mule.modules.jsonplaceholder.model.Comment;
 import org.mule.modules.jsonplaceholder.model.Post;
 import org.mule.modules.jsonplaceholder.model.User;
@@ -43,7 +41,6 @@ public abstract class JSONPlaceHolderConnector {
      * Get a list of Posts
      */
     @Processor
-    @ReconnectOn(exceptions = { Exception.class })
     @RestCall(uri = "{baseUrl}/posts", method = HttpMethod.GET)
     public abstract List<Post> getPosts() throws IOException;
 
@@ -51,7 +48,6 @@ public abstract class JSONPlaceHolderConnector {
      * Get a list of Comments from a specific post.
      */
     @Processor
-    @ReconnectOn(exceptions = { Exception.class })
     @RestCall(uri = "{baseUrl}/posts/{postId}/comments", method = HttpMethod.GET)
     public abstract List<Comment> getPostsComments(@RestUriParam("postId") @Default("1") Integer postId) throws IOException;
 
@@ -61,7 +57,6 @@ public abstract class JSONPlaceHolderConnector {
      * This will generate a call equivalent to: <b>{baseUrl}/posts?userId=1<b/>
      */
     @Processor
-    @ReconnectOn(exceptions = { Exception.class })
     @RestCall(uri = "{baseUrl}/posts", method = HttpMethod.GET)
     public abstract List<Post> getPostsFromUser(@RestQueryParam("userId") @Default("1") Integer userId) throws IOException;
 
@@ -69,7 +64,6 @@ public abstract class JSONPlaceHolderConnector {
      * Get a list of Users
      */
     @Processor
-    @ReconnectOn(exceptions = { Exception.class })
     @RestCall(uri = "{baseUrl}/users", method = HttpMethod.GET)
     public abstract List<User> getUsers() throws IOException;
 
@@ -77,7 +71,6 @@ public abstract class JSONPlaceHolderConnector {
      * Get a list of Comments
      */
     @Processor
-    @ReconnectOn(exceptions = { Exception.class })
     @RestCall(uri = "{baseUrl}/comments", method = HttpMethod.GET)
     public abstract List<Comment> getComments() throws IOException;
 
@@ -85,9 +78,29 @@ public abstract class JSONPlaceHolderConnector {
      * Get Post by Id
      */
     @Processor
-    @ReconnectOn(exceptions = { Exception.class })
     @RestCall(uri = "{baseUrl}/posts/{postId}", method = HttpMethod.GET)
     public abstract Post getPost(@RestUriParam("postId") @Default("1") Integer postId) throws IOException;
+
+    /**
+     * Get Post by Id
+     */
+    @Processor
+    @RestCall(uri = "{baseUrl}/posts", method = HttpMethod.POST,contentType = "application/json")
+    public abstract Post createPost(@Payload Post post) throws IOException;
+
+    /**
+     * Deletes a post
+     */
+    @Processor
+    @RestCall(uri = "{baseUrl}/posts/{postId}", method = HttpMethod.DELETE, exceptions = {@RestExceptionOn(expression="#[message.inboundProperties['http.status'] != 204]"), @RestExceptionOn(expression="#[message.inboundProperties['http.status'] == 404]")})
+    public abstract void deletePost(@RestUriParam("postId") Integer postId) throws IOException;
+
+    /**
+     * Update a post
+     */
+    @Processor
+    @RestCall(uri = "{baseUrl}/posts/{postId}", method = HttpMethod.PUT, contentType = "application/json")
+    public abstract boolean updatePost(Post post, @RestUriParam("postId") Integer postId) throws IOException;
 
     @Transformer(sourceTypes = { String.class })
     public static Post transformJsonToBook(String json) throws IOException {
